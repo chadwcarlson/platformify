@@ -383,8 +383,20 @@
         {{ "" }}
         # Scheduled tasks for the app.
         # -> More information: {{ .Assets.Docs.AppReference }}#crons
-        # crons:
 {{- end }}
+        {{- if .Crons -}}
+        {{ printf "\n        crons:" }}   
+        {{- range $key, $value := .Crons -}}
+            {{ printf "\n            %s:" $key }}
+                {{ printf "commands:" }}   
+                {{- range $key, $value := $value -}}
+                    {{ printf "\n                    %s: \"%s\"" $key $value }}
+                {{- end -}}
+        {{- end -}}
+        {{- else if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # crons:
+        {{- end -}}
 
 
 {{- if .Workers -}}

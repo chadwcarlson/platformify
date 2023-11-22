@@ -71,6 +71,7 @@ type UserInput struct {
 	Disk               string
 	Mounts             map[string]map[string]string
 	Workers            map[string]map[string]string
+	Crons              map[string]map[string]string
 	Services           []Service
 	Relationships      map[string]string
 	WorkingDirectory   string

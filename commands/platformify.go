@@ -44,6 +44,7 @@ func NewPlatformifyCmd(assets *vendorization.VendorAssets) *cobra.Command {
 				&question.Locations{},
 				&question.Mounts{},
 				&question.Workers{},
+				&question.Crons{},
 				&question.Name{},
 				&question.ApplicationRoot{},
 				&question.Environment{},

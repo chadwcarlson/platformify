@@ -27,6 +27,7 @@ type Answers struct {
 	Disk               string                            `json:"disk"`
 	Mounts             map[string]map[string]string      `json:"mounts"`
 	Workers            map[string]map[string]string      `json:"workers"`
+	Crons              map[string]map[string]string      `json:"crons"`
 	Services           []Service                         `json:"services"`
 	WorkingDirectory   string                            `json:"working_directory"`
 	HasGit             bool                              `json:"has_git"`
@@ -131,6 +132,7 @@ func (a *Answers) ToUserInput() *platformifier.UserInput {
 		Disk:               a.Disk,
 		Mounts:             a.Mounts,
 		Workers:            a.Workers,
+		Crons:              a.Crons,
 		Services:           services,
 		Relationships:      getRelationships(a.Services),
 		WorkingDirectory:   a.WorkingDirectory,
