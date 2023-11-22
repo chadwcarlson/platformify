@@ -1,6 +1,7 @@
 package question
 
 import (
+	"os"
 	"context"
 	"fmt"
 	"path"
@@ -23,6 +24,9 @@ func (q *Name) Ask(ctx context.Context) error {
 	answers, ok := models.FromContext(ctx)
 	if !ok {
 		return nil
+	}
+	if os.Getenv("UPSUN_USEDEFAULTS") == "1" || os.Getenv("UPSUN_USEDEFAULTS") == "true" {
+		answers.Name = slugify(path.Base(answers.WorkingDirectory))
 	}
 	if answers.Name != "" {
 		// Skip the step

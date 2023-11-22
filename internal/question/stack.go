@@ -53,9 +53,21 @@ func (q *Stack) Ask(ctx context.Context) error {
 
 	answers.Stack = models.GenericStack
 
+	// Allow for setting stack values quickly via environment variables.
+	if os.Getenv("UPSUN_STACK") != "" {
+		if os.Getenv("UPSUN_STACK") == "django" {
+			answers.Stack = models.Django
+			return nil
+		}
+		if os.Getenv("UPSUN_STACK") == "laravel" {
+			answers.Stack = models.Laravel
+			return nil
+		}
+	}
+
 	hasSettingsPy := utils.FileExists(answers.WorkingDirectory, settingsPyFile)
 	hasManagePy := utils.FileExists(answers.WorkingDirectory, managePyFile)
-	if hasSettingsPy && hasManagePy {
+	if hasSettingsPy || hasManagePy {
 		answers.Stack = models.Django
 		return nil
 	}

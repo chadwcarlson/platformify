@@ -2,15 +2,15 @@ package question
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"path"
 	"path/filepath"
 
-	"golang.org/x/exp/slices"
+	// "golang.org/x/exp/slices"
 
 	"github.com/platformsh/platformify/internal/question/models"
 	"github.com/platformsh/platformify/internal/utils"
-	"github.com/platformsh/platformify/vendorization"
+	// "github.com/platformsh/platformify/vendorization"
 )
 
 type BuildSteps struct{}
@@ -46,6 +46,9 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 		case models.Pip:
 			answers.BuildSteps = append(
 				answers.BuildSteps,
+				"# Upgrade to the latest version of pip.",
+				"pip install --upgrade pip",
+				"# Install dependencies.",
 				"pip install -r requirements.txt",
 			)
 		case models.Yarn, models.Npm:
@@ -95,22 +98,26 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 			path.Join(answers.WorkingDirectory, answers.ApplicationRoot),
 			managePyFile,
 		); managePyPath != "" {
-			prefix := ""
-			if slices.Contains(answers.DependencyManagers, models.Pipenv) {
-				prefix = "pipenv run "
-			} else if slices.Contains(answers.DependencyManagers, models.Poetry) {
-				prefix = "poetry run "
-			}
+			// prefix := ""
+			// if slices.Contains(answers.DependencyManagers, models.Pipenv) {
+			// 	prefix = "pipenv run "
+			// } else if slices.Contains(answers.DependencyManagers, models.Poetry) {
+			// 	prefix = "poetry run "
+			// }
 
 			managePyPath, _ = filepath.Rel(path.Join(answers.WorkingDirectory, answers.ApplicationRoot), managePyPath)
-			assets, _ := vendorization.FromContext(ctx)
+			// assets, _ := vendorization.FromContext(ctx)
 			answers.BuildSteps = append(
 				answers.BuildSteps,
-				fmt.Sprintf(
-					"# Collect static files so that they can be served by %s",
-					assets.ServiceName,
-				),
-				fmt.Sprintf("%spython %s collectstatic --noinput", prefix, managePyPath),
+				"pip install --upgrade pip",
+				"pip install -r requirements.txt",
+				// fmt.Sprintf(
+				// 	"# Collect static files so that they can be served by %s.",
+				// 	assets.ServiceName,
+				// ),
+				// fmt.Sprintf("%spython %s collectstatic --noinput\n", prefix, managePyPath),
+				"npm install",
+				"npm run build",
 			)
 		}
 	}

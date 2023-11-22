@@ -26,6 +26,7 @@ type Answers struct {
 	BuildFlavor        string                            `json:"build_flavor"`
 	Disk               string                            `json:"disk"`
 	Mounts             map[string]map[string]string      `json:"mounts"`
+	Workers            map[string]map[string]string      `json:"workers"`
 	Services           []Service                         `json:"services"`
 	WorkingDirectory   string                            `json:"working_directory"`
 	HasGit             bool                              `json:"has_git"`
@@ -129,6 +130,7 @@ func (a *Answers) ToUserInput() *platformifier.UserInput {
 		BuildFlavor:        a.BuildFlavor,
 		Disk:               a.Disk,
 		Mounts:             a.Mounts,
+		Workers:            a.Workers,
 		Services:           services,
 		Relationships:      getRelationships(a.Services),
 		WorkingDirectory:   a.WorkingDirectory,
@@ -169,7 +171,21 @@ func getRelationships(services []Service) map[string]string {
 		if remappedEndpoint, ok := endpointRemap[endpoint]; ok {
 			endpoint = remappedEndpoint
 		}
-		relationships[service.Name] = fmt.Sprintf("%s:%s", service.Name, endpoint)
+		
+		fmt.Print(service.Name)
+		// Define stack default overrides
+		if ( os.Getenv("UPSUN_USEDEFAULTS") == "1" || os.Getenv("UPSUN_USEDEFAULTS") == "true" ) && service.Name == "redis" {
+			if os.Getenv("UPSUN_STACK") == "laravel" {
+				var relationshipCache = "rediscache"
+				var relationshipSession = "redissession"
+				relationships[relationshipCache] = fmt.Sprintf("%s:%s", service.Name, endpoint)
+				relationships[relationshipSession] = fmt.Sprintf("%s:%s", service.Name, endpoint)
+			}
+		} else {
+			relationships[service.Name] = fmt.Sprintf("%s:%s", service.Name, endpoint)
+		}
+
+
 	}
 	return relationships
 }

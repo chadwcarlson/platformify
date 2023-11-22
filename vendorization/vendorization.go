@@ -3,6 +3,7 @@ package vendorization
 import (
 	"context"
 	"fmt"
+	"os"
 )
 
 type vendorAssetsKey string
@@ -14,11 +15,13 @@ type Docs struct {
 	GettingStarted string
 	Hooks          string
 	PHP            string
+	Languages      string
 	Routes         string
 	Services       string
 	SymfonyCLI     string
 	TimeZone       string
 	Variables      string
+	ShowComments   bool
 }
 
 type VendorAssets struct {
@@ -48,16 +51,22 @@ func (va *VendorAssets) ProprietaryFiles() []string {
 }
 
 func (va *VendorAssets) Docs() *Docs {
+	showComments := true
+	if os.Getenv("UPSUN_SHOWCOMMENTS") == "0" || os.Getenv("UPSUN_SHOWCOMMENTS") == "false" {
+		showComments = false
+	}
 	return &Docs{
 		AppReference:   fmt.Sprintf("%s/create-apps/app-reference.html", va.DocsBaseURL),
 		GettingStarted: fmt.Sprintf("%s/guides/symfony/get-started.html", va.DocsBaseURL),
 		Hooks:          fmt.Sprintf("%s/create-apps/hooks/hooks-comparison.html", va.DocsBaseURL),
+		Languages:      fmt.Sprintf("%s/languages", va.DocsBaseURL),
 		PHP:            fmt.Sprintf("%s/languages/php.html", va.DocsBaseURL),
 		Routes:         fmt.Sprintf("%s/define-routes.html", va.DocsBaseURL),
 		Services:       fmt.Sprintf("%s/add-services.html", va.DocsBaseURL),
 		SymfonyCLI:     fmt.Sprintf("%s/guides/symfony/get-started.html#symfony-cli-tipsl", va.DocsBaseURL),
 		TimeZone:       fmt.Sprintf("%s/create-apps/timezone.html", va.DocsBaseURL),
 		Variables:      fmt.Sprintf("%s/development/variables/use-variables.html#use-platformsh-provided-variables", va.DocsBaseURL),
+		ShowComments: 	showComments,
 	}
 }
 

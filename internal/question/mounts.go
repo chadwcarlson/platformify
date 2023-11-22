@@ -63,6 +63,14 @@ func (q *Mounts) Ask(ctx context.Context) error {
 				"source_path": "uploads",
 			},
 		}
+	case models.Django:
+		answers.Disk = "512" // in MB
+		answers.Mounts = map[string]map[string]string{
+			"/staticfiles": {
+				"source":      "local",
+				"source_path": "static_assets",
+			},
+		}
 	}
 
 	return nil

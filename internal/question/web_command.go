@@ -66,7 +66,7 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 				path.Dir(path.Dir(wsgiPath)),
 			)
 			if wsgiRel != "." {
-				pythonPath = "--pythonpath=" + path.Base(path.Dir(path.Dir(wsgiPath)))
+				pythonPath = " --pythonpath=" + path.Base(path.Dir(path.Dir(wsgiPath)))
 			}
 		}
 
@@ -76,11 +76,11 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 			prefix = "poetry run "
 		}
 		if answers.SocketFamily == models.TCP {
-			answers.WebCommand = fmt.Sprintf("%sgunicorn %s -b 0.0.0.0:$PORT %s --log-file -", prefix, pythonPath, wsgi)
+			answers.WebCommand = fmt.Sprintf("%sgunicorn%s -b 0.0.0.0:$PORT %s --log-file -", prefix, pythonPath, wsgi)
 			return nil
 		}
 
-		answers.WebCommand = fmt.Sprintf("%sgunicorn %s -b unix:$SOCKET %s --log-file -", prefix, pythonPath, wsgi)
+		answers.WebCommand = fmt.Sprintf("%sgunicorn%s -b unix:$SOCKET %s --log-file -", prefix, pythonPath, wsgi)
 		return nil
 	case models.NextJS:
 		answers.WebCommand = "npx next start -p $PORT"

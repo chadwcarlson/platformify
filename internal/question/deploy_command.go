@@ -32,6 +32,7 @@ func (q *DeployCommand) Ask(ctx context.Context) error {
 				prefix = "poetry run "
 			}
 			answers.DeployCommand = append(answers.DeployCommand,
+				fmt.Sprintf("%spython %s collectstatic --noinput", prefix, managePyPath),
 				fmt.Sprintf("%spython %s migrate", prefix, managePyPath),
 			)
 		}

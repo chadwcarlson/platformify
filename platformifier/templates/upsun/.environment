@@ -9,7 +9,7 @@ export DATABASE_URL="${DB_SCHEME}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${D
 {{- end -}}
 {{- if eq .Stack.Name "laravel" }}
 
-# Set Laravel-specific environment variables
+# Set Laravel-specific database environment variables
 export DB_CONNECTION="$DB_SCHEME"
 export DB_DATABASE="$DB_PATH"
 {{- end -}}
@@ -26,17 +26,31 @@ export CACHE_URL="${CACHE_SCHEME}://${CACHE_HOST}:${CACHE_PORT}"
 # Set Redis environment variables
 export REDIS_URL="$CACHE_URL"
 {{- end -}}
-{{- if eq .Stack.Name "strapi" }}
 
-# Set Strapi-specific environment variables
-export DATABASE_HOST="$DB_HOST"
-export DATABASE_PORT="$DB_PORT"
-export DATABASE_NAME="$DB_PATH"
-export DATABASE_USERNAME="$DB_USERNAME"
-export DATABASE_PASSWORD="$DB_PASSWORD"
-export DATABASE_SCHEME="$DB_SCHEME"
+{{- if eq .Stack.Name "django" -}}
+# Celery
+# ------------------------------------------------------------------------------
+export CELERY_BROKER_URL="$CACHE_URL"
+{{- end -}}
 
-export ADMIN_JWT_SECRET="${{ .Assets.EnvPrefix }}_PROJECT_ENTROPY"
-export JWT_SECRET="${{ .Assets.EnvPrefix }}_PROJECT_ENTROPY"
-export API_TOKEN_SALT="${{ .Assets.EnvPrefix }}_PROJECT_ENTROPY"
+{{- if eq .Stack.Name "laravel" }}
+export APP_NAME={{ .Name }}
+export APP_ENV=production
+export APP_DEBUG=false
+
+export CACHE_DRIVER=redis
+export SESSION_DRIVER=redis
+export REDIS_CLIENT=phpredis
+# export REDIS_HOST
+# export REDIS_PORT
+
+export APP_KEY="${{ .Assets.EnvPrefix }}_PROJECT_ENTROPY"
+
+export APP_URL=$(echo $${{ .Assets.EnvPrefix }}_ROUTES | base64 --decode | jq -r 'to_entries[] | select(.value.primary == true) | .key')
+
+export SESSION_SECURE_COOKIE=1
+
+export MAIL_HOST="${{ .Assets.EnvPrefix }}_SMTP_HOST"
+export MAIL_DRIVER=smtp
+export MAIL_PORT=25
 {{- end -}}

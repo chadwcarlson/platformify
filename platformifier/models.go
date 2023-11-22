@@ -70,6 +70,7 @@ type UserInput struct {
 	BuildFlavor        string
 	Disk               string
 	Mounts             map[string]map[string]string
+	Workers            map[string]map[string]string
 	Services           []Service
 	Relationships      map[string]string
 	WorkingDirectory   string
