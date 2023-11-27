@@ -122,5 +122,15 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 		}
 	}
 
+	if answers.Stack == models.Laravel {
+		answers.BuildSteps = append(
+			answers.BuildSteps,
+			"n auto || n lts",
+			"hash -r",
+			"npm install",
+			"npm run production",
+		)
+	}
+
 	return nil
 }

@@ -22,16 +22,7 @@ func (q *Crons) Ask(ctx context.Context) error {
 				"cmd":      "php artisan schedule:run",
 			},
 		}
-	// case models.Django:
-	// 	answers.Crons = map[string]map[string]string{
-	// 		"celery_worker": {
-	// 			"start":      "celery -A config.celery_app worker --loglevel=info",
-	// 		},
-	// 		"celery_beat": {
-	// 			"start":      "celery -A config.celery_app beat --loglevel=info",
-	// 		},
-	// 	}
 	}
-
+	
 	return nil
 }

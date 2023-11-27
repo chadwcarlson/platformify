@@ -48,11 +48,22 @@
 
 
 {{- if or ( eq "php" .Runtime ) ( eq "lisp" .Runtime ) -}}
-{{- if .Assets.Docs.ShowComments -}}
+
+    {{- if .Assets.Docs.ShowComments -}}
         {{ "" }}
         # Customizations to your PHP or Lisp runtime. 
         # ~ More information: {{ .Assets.Docs.AppReference }}#runtime
-{{- if eq "python" .Runtime -}}
+    {{- end -}}
+
+    {{- if eq "laravel" .Stack.Name -}}
+        {{ "" }}
+        runtime:
+            extensions:
+                - blackfire
+                - redis
+
+    {{- else if .Assets.Docs.ShowComments -}}
+        {{- if eq "python" .Runtime -}}
         {{ "" }}
         # ~ For PHP, you can use this key to enable extensions.
         # ~ More information: {{ .Assets.Docs.Languages }}/{{ .Runtime }}/extensions.html
@@ -63,7 +74,7 @@
         #          configuration:
         #              server_id: foo
         #              server_token: bar
-{{- else if eq "lisp" .Runtime -}}
+        {{- else if eq "lisp" .Runtime -}}
         {{ "" }}
         # ~ For Lisp, you can use this key to define the distribution of QuickLisp to use.
         # ~ More information: {{ .Assets.Docs.Languages }}/{{ .Runtime }}.html#quicklisp-options
@@ -71,9 +82,9 @@
         #    quicklisp:
         #        quicklisp:
         #            url: 'http://beta.quicklisp.org/dist/quicklisp.txt'
-        #            version: '2019-07-11'
-{{- end -}}
-{{- end -}}
+        #            version: '2019-07-11'    
+        {{- end -}}
+    {{- end -}}
 {{- end -}}
 
 
@@ -279,7 +290,12 @@
                 {{- range $key, $value := .Locations -}}
                     {{ printf "\n                \"%s\":" $key }}
                     {{- range $key, $value := $value -}}
-                        {{- if typeIs "string" $value -}}
+                        {{- if eq $key "index" -}}
+                            {{ printf "\n                    \"%s\":" $key }}
+                            {{- range $step := $value -}}
+                                {{ printf "\n                        - %s" $step }}
+                            {{- end -}}
+                        {{- else if typeIs "string" $value -}}
                             {{ printf "\n                    \"%s\": %s" $key (quote $value) }}
                         {{- else -}}
                             {{ printf "\n                    \"%s\": %t" $key $value }}

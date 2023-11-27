@@ -18,7 +18,7 @@ func (q *Workers) Ask(ctx context.Context) error {
 	case models.Laravel:
 		answers.Workers = map[string]map[string]string{
 			"queue": {
-				"start":      "php artisan schedule:work",
+				"start":      "php artisan schedule:work --max-time=3600",
 			},
 		}
 	case models.Django:

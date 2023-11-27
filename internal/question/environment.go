@@ -26,5 +26,10 @@ func (q *Environment) Ask(ctx context.Context) error {
 		}
 	}
 
+	switch answers.Stack {
+	case models.Laravel:
+		answers.Environment["N_PREFIX"] = "/app/.global"
+	}
+
 	return nil
 }
