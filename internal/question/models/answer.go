@@ -173,21 +173,7 @@ func getRelationships(services []Service) map[string]string {
 		if remappedEndpoint, ok := endpointRemap[endpoint]; ok {
 			endpoint = remappedEndpoint
 		}
-		
-		fmt.Print(service.Name)
-		// Define stack default overrides
-		if ( os.Getenv("UPSUN_USEDEFAULTS") == "1" || os.Getenv("UPSUN_USEDEFAULTS") == "true" ) && service.Name == "redis" {
-			if os.Getenv("UPSUN_STACK") == "laravel" {
-				var relationshipCache = "rediscache"
-				var relationshipSession = "redissession"
-				relationships[relationshipCache] = fmt.Sprintf("%s:%s", service.Name, endpoint)
-				relationships[relationshipSession] = fmt.Sprintf("%s:%s", service.Name, endpoint)
-			}
-		} else {
-			relationships[service.Name] = fmt.Sprintf("%s:%s", service.Name, endpoint)
-		}
-
-
+		relationships[service.Name] = fmt.Sprintf("%s:%s", service.Name, endpoint)
 	}
 	return relationships
 }
