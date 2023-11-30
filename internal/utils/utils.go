@@ -11,6 +11,9 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 	"golang.org/x/exp/slices"
+
+	"fmt"
+
 )
 
 var skipDirs = []string{
@@ -118,7 +121,9 @@ func GetJSONValue(keyPath []string, filePath string, caseInsensitive bool) (valu
 }
 
 // ContainsStringInFile checks if the given file contains the given string
-func ContainsStringInFile(file io.Reader, target string, caseInsensitive bool) (bool, error) {
+func ContainsStringInFile(file io.Reader, target string, caseInsensitive bool, removeMatch bool) (bool, []string, error) {
+	matchLines := []string{}
+	stringInFile := false
 	if caseInsensitive {
 		target = strings.ToLower(target)
 	}
@@ -126,20 +131,30 @@ func ContainsStringInFile(file io.Reader, target string, caseInsensitive bool) (
 	for scanner.Scan() {
 		if caseInsensitive {
 			if strings.Contains(strings.ToLower(scanner.Text()), target) {
-				return true, nil
+				if removeMatch {
+					matchLines = append(matchLines, strings.ReplaceAll(scanner.Text(), target, ""))
+				} else {
+					matchLines = append(matchLines)
+				}
+				stringInFile = true
 			}
 		} else {
 			if strings.Contains(scanner.Text(), target) {
-				return true, nil
+				if removeMatch {
+					matchLines = append(matchLines, strings.ReplaceAll(scanner.Text(), target, ""))
+				} else {
+					matchLines = append(matchLines)
+				}
+				stringInFile = true
 			}
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return false, err
+		return stringInFile, matchLines, err
 	}
 
-	return false, nil
+	return stringInFile, matchLines, nil
 }
 
 // GetTOMLValue gets a value from a TOML file, by traversing the path given
@@ -169,4 +184,80 @@ func GetTOMLValue(keyPath []string, filePath string, caseInsensitive bool) (valu
 	}
 
 	return GetMapValue(keyPath, data)
+}
+
+// DepInNestedRequirements follows the import path from a root requirements.txt file to up to 2 levels of imports
+// 		to locate a particular dependency.
+// 
+// When using pip, a framework requirement can be nested across multiple files like so
+// .
+// ├── requirements
+// │   ├── base.txt <- only this file contains Flask, for example
+// │   ├── dev.txt  <- this file also imports base.txt
+// │   └── prod.txt <- Flask _could_ be here, but this is also where this file could import base.txt
+// └── requirements.txt <- this file imports production as an example
+// 
+// This is a common pattern, and without some logic like this we won't be able to detect many Python frameworks using pip + venv.
+// 
+// Note: this logic does still depend on a root requirements.txt file, as there's too much variability otherwise.
+func DepInNestedRequirements(keyRequirement string, filePath string, caseInsensitive bool) (value interface{}, ok bool) {
+	fin, err := os.Open(filePath)
+	if err != nil {
+		return nil, false
+	}
+	defer fin.Close()
+
+	// First check if Framework is imported in that root requirements.txt file.
+	if ok, matchLines, _ := ContainsStringInFile(fin, keyRequirement, caseInsensitive, false); ok {
+		return matchLines, true
+	} else {
+		f, err := os.Open(filePath)
+		if err == nil {
+			defer f.Close()
+
+			// Then, check to see if there are imports (-r) in that root requirements.txt file.
+			if ok, imports, _ := ContainsStringInFile(f, "-r ", true, true); ok {
+
+				// If so, loop through all that are used.
+				for _, importRequirementsFilePath := range imports {
+
+					// Stash the import directory (i.e. requirements/), since everything is relative from here on.
+					importDir := strings.Split(importRequirementsFilePath, "/")[0]
+					f, err := os.Open(importRequirementsFilePath)
+					if err == nil {
+						defer f.Close()
+
+						// Open the imported file, and check again for Framework.
+						if ok, matchLines, _ := ContainsStringInFile(f, keyRequirement, caseInsensitive, false); ok {
+							return matchLines, true
+
+						} else {
+							f, err := os.Open(importRequirementsFilePath)
+							if err == nil {
+								defer f.Close()
+
+								// There may be one more layer of imports (i.e. requirements <- prod <- base ), so check.
+								if ok, imports, _ := ContainsStringInFile(f, "-r ", true, true); ok {
+
+									// If found, loop through all second-level imports.
+									for _, importRequirementsFilePath := range imports {
+										f, err := os.Open(fmt.Sprintf("%s/%s", importDir, importRequirementsFilePath))
+										if err == nil {
+											defer f.Close()
+
+											// This is the deepest check, so check for the last time for Framework.
+											if ok, matchLines, _ := ContainsStringInFile(f, keyRequirement, caseInsensitive, false); ok {
+												return matchLines, true
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil, false
 }

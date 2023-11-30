@@ -62,7 +62,8 @@ func (p *djangoPlatformifier) Platformify(ctx context.Context, input *UserInput)
 		defer settingsFile.Close()
 
 		// Check if there is an import line in the file
-		found, err := utils.ContainsStringInFile(settingsFile, importSettingsPshLine, false)
+		// found, err := utils.ContainsStringInFile(settingsFile, importSettingsPshLine, false)
+		found, _, err := utils.ContainsStringInFile(settingsFile, importSettingsPshLine, true, false)
 		if err != nil {
 			return err
 		}
