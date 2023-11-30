@@ -3,7 +3,6 @@ package question
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	"golang.org/x/exp/slices"
@@ -41,11 +40,21 @@ func (q *Stack) Ask(ctx context.Context) error {
 		if answers.Stack != models.GenericStack {
 			fmt.Fprintf(
 				stderr,
-				"%s %s\n",
+				"\n%s %s\n",
 				colors.Colorize(colors.GreenCode, "✓"),
 				colors.Colorize(
 					colors.BrandCode,
 					fmt.Sprintf("Detected stack: %s", answers.Stack.Title()),
+				),
+			)
+		} else {
+			fmt.Fprintf(
+				stderr,
+				"\n\n%s %s\n",
+				colors.Colorize(colors.GreenCode, "✓"),
+				colors.Colorize(
+					colors.BrandCode,
+					fmt.Sprintf("No specific stack detected"),
 				),
 			)
 		}
@@ -53,22 +62,30 @@ func (q *Stack) Ask(ctx context.Context) error {
 
 	answers.Stack = models.GenericStack
 
+	// Allow for setting stack values quickly via environment variables.
+	if os.Getenv("UPSUN_STACK") != "" {
+		if os.Getenv("UPSUN_STACK") == "django" {
+			answers.Stack = models.Django
+			return nil
+		}
+		if os.Getenv("UPSUN_STACK") == "laravel" {
+			answers.Stack = models.Laravel
+			return nil
+		}
+	}
+
 	hasSettingsPy := utils.FileExists(answers.WorkingDirectory, settingsPyFile)
 	hasManagePy := utils.FileExists(answers.WorkingDirectory, managePyFile)
-	if hasSettingsPy && hasManagePy {
+	if hasSettingsPy || hasManagePy {
 		answers.Stack = models.Django
 		return nil
 	}
 
 	requirementsPath := utils.FindFile(answers.WorkingDirectory, "requirements.txt")
 	if requirementsPath != "" {
-		f, err := os.Open(requirementsPath)
-		if err == nil {
-			defer f.Close()
-			if ok, _ := utils.ContainsStringInFile(f, "flask", true); ok {
-				answers.Stack = models.Flask
-				return nil
-			}
+		if _, ok := utils.DepInNestedRequirements("flask", requirementsPath, true); ok {
+			answers.Stack = models.Flask
+			return nil
 		}
 	}
 

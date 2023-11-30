@@ -32,3 +32,6 @@ go.work
 .idea
 
 dist/
+
+# Test projects
+laravel-example

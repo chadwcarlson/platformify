@@ -1,4 +1,178 @@
+{{- if .Assets.Docs.ShowComments -}}
+{{ "#######################################################################################################################" }}
+{{ "#######################################################################################################################" }}
+# APPLICATIONS
+#
+# The applications built and deployed for the project.
+#
 # Complete list of all available properties: {{ .Assets.Docs.AppReference }}
+
+{{ "#######################################################################################################################" }}
+{{ printf "# Top-level key for all applications. %s configuration can exist across multiple files, but all must be under this key.\n" .Assets.ServiceName }}
+{{- end -}}
+
+
+{{ "applications:"}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+    {{ "" }}
+    # The name of the application, which must be unique.
+{{- end -}}
+    {{ printf "\n    %s" .Name }}:
+
+
+{{- if .Assets.Docs.ShowComments -}}
+    {{ "" }}
+        # The runtime the application uses.
+        # ~ Complete list of available runtimes: {{ .Assets.Docs.AppReference }}#types
+        # ~ Complete list of supported {{ .Runtime }} versions: {{ .Assets.Docs.Languages }}/{{ .Runtime }}.html#supported-versions
+{{- end -}}
+        {{ printf "\n        type: \"%s\"" .Type }}
+
+
+{{- if or ( eq "php" .Runtime ) ( eq "nodejs" .Runtime ) -}}
+    {{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Specifies a default set of build tasks to run. Flavors are language-specific.
+        # ~ More information: {{ .Assets.Docs.AppReference }}#build
+    {{- end -}}
+    {{- if .BuildFlavor -}}
+        {{ printf "\n        build:" }}
+            flavor: {{ .BuildFlavor }}
+    {{- else if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # build:
+        #     flavor: none
+    {{- end -}}
+{{- end -}}
+
+
+{{- if or ( eq "php" .Runtime ) ( eq "lisp" .Runtime ) -}}
+
+    {{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Customizations to your PHP or Lisp runtime. 
+        # ~ More information: {{ .Assets.Docs.AppReference }}#runtime
+    {{- end -}}
+
+    {{- if eq "laravel" .Stack.Name -}}
+        {{ "" }}
+        runtime:
+            extensions:
+                - blackfire
+                - redis
+
+    {{- else if .Assets.Docs.ShowComments -}}
+        {{- if eq "python" .Runtime -}}
+        {{ "" }}
+        # ~ For PHP, you can use this key to enable extensions.
+        # ~ More information: {{ .Assets.Docs.Languages }}/{{ .Runtime }}/extensions.html
+        # runtime:
+        #    extensions:
+        #        - geoip
+        #        - name: blackfire
+        #          configuration:
+        #              server_id: foo
+        #              server_token: bar
+        {{- else if eq "lisp" .Runtime -}}
+        {{ "" }}
+        # ~ For Lisp, you can use this key to define the distribution of QuickLisp to use.
+        # ~ More information: {{ .Assets.Docs.Languages }}/{{ .Runtime }}.html#quicklisp-options
+        # runtime:
+        #    quicklisp:
+        #        quicklisp:
+        #            url: 'http://beta.quicklisp.org/dist/quicklisp.txt'
+        #            version: '2019-07-11'    
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Installs global dependencies as part of the build process. They’re independent of your app’s dependencies and
+        # are available in the PATH during the build process and in the runtime environment. They’re installed before
+        # the build hook runs using a package manager for the language.
+        # ~ More information: {{ .Assets.Docs.AppReference }}#dependencies
+{{- end -}}
+{{- if .Dependencies -}}
+    {{ printf "\n        dependencies:" }}
+    {{- range $key, $value := .Dependencies -}}
+            {{ printf "\n            %s:" $key }}
+        {{- range $key, $value := $value -}}
+                {{ printf "\n                %s: \"%s\"" $key $value }}
+        {{- end -}}
+    {{- end -}}
+{{- else -}}
+    {{- if and (eq "python" .Runtime) (.Assets.Docs.ShowComments) -}}
+        {{ "" }}
+        # ~ For example, specify one Python 3 package per line.
+        # dependencies:
+        #     python3:
+        #         numpy: '*'
+    {{- else if and (eq "php" .Runtime) (.Assets.Docs.ShowComments) -}}
+        {{ "" }}
+        # ~ For example, specify one Composer package per line.
+        # dependencies:
+        #     php:
+        #         drush/drush: '8.0.0'
+        #         composer/composer: '^2'
+    {{- else if and (eq "nodejs" .Runtime) (.Assets.Docs.ShowComments) -}}
+        {{ "" }}
+        # ~ For example, specify one NPM package per line.
+        # dependencies:
+        #     nodejs:
+        #         pm2: '^4.5.0'
+    {{- else if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # ~ For example, specify one package per line.
+        # dependencies:
+        #     runtime: # Specify one package per line.
+        #         package: 'version'
+    {{- end -}}
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Application source code directory.
+        # source:
+        #     root: "{{ .ApplicationRoot }}"
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # This is equivalent to adding the mapping to the '/etc/hosts' file for the container.
+        # ~ More information: {{ .Assets.Docs.AppReference }}#additional-hosts
+        # additional_hosts:
+        #     api.example.com: "192.0.2.23"
+        #     web.example.com: "203.0.113.42"
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Variables to control the environment. Add environment variables here that are static.
+        # ~ More information: {{ .Assets.Docs.AppReference }}#variables
+{{- end -}}
+{{- if .Environment -}}
+        {{ printf "\n        variables:" }}
+            env:
+            {{- range $key, $value := .Environment -}}
+                {{ printf "\n                %s: \"%s\"" $key $value }}
+            {{- end -}}
+{{- else if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # variables:
+        #     env:
+    {{- if eq "python" .Runtime -}}
+        {{ printf "\n        #        PYTHONUNBUFFERED: \"1\"" }}
+    {{- else if eq "php" .Runtime -}}
+        {{ printf "\n        #        XDEBUG_MODE: off" }}
+    {{- else if eq "nodejs" .Runtime -}}
+
 applications:
   {{ .Name }}:
     # Application source code directory
@@ -166,91 +340,357 @@ applications:
         {{ $key }}: "{{ $value }}"
         {{- end }}
       {{- end }}
+
     {{- else -}}
-    # dependencies:
-      {{- if eq "python" .Runtime }}
-    #   python3: # Specify one Python 3 package per line.
-    #     numpy: '*'
-      {{- else if eq "php" .Runtime }}
-    #   php: # Specify one Composer package per line.
-    #     drush/drush: '8.0.0'
-    #     composer/composer: '^2'
-      {{- else if eq "nodejs" .Runtime }}
-    #   nodejs: # Specify one NPM package per line.
-    #     pm2: '^4.5.0'
-      {{- else }}
-    #   runtime: # Specify one package per line.
-    #     package: 'version'
-      {{- end }}
-    {{- end }}
+        {{ printf "\n        #        ENV_VARIABLE_NAME: \"value\"" }}
+    {{- end -}}
+{{- end -}}
 
-    # Hooks allow you to customize your code/environment as the project moves through the build and deploy stages
-    # More information: {{ .Assets.Docs.AppReference }}#hooks
-    hooks:
-      # The build hook is run after any build flavor.
-      # More information: {{ .Assets.Docs.Hooks }}#build-hook
-      build: |
-        set -eux
-        {{ range $step := .BuildSteps }}
-        {{- $step }}
-        {{ else }}
-        # Add build steps here.
-        # echo 'I am a build step'
-        {{ end }}
-      # The deploy hook is run after the app container has been started, but before it has started accepting requests.
-      # More information: {{ .Assets.Docs.Hooks }}#deploy-hook
-      deploy: |
-        set -eux
-        {{ range $deploycmd := .DeployCommand }}
-        {{- $deploycmd }}
-        {{ else -}}
-        # echo 'Put your deploy command here'
-        {{ end }}
 
-      # The post_deploy hook is run after the app container has been started and after it has started accepting requests.
-      # More information: {{ .Assets.Docs.Hooks }}#deploy-hook
-      # post_deploy: |
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Hooks allow you to customize your code/environment as the project moves through the build and deploy stages
+        # ~ More information: {{ .Assets.Docs.AppReference }}#hooks
+{{- end -}}
+        {{ printf "\n        hooks:" }}
 
-    # Scheduled tasks for the app.
-    # More information: {{ .Assets.Docs.AppReference }}#crons
-    # crons:
 
-    # Customizations to your PHP or Lisp runtime. More information: {{ .Assets.Docs.AppReference }}#runtime
-    # runtime:
+{{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # The build hook is run after any build flavor.
+            # ~ More information: {{ .Assets.Docs.Hooks }}#build-hook
+{{- end -}}     
+            {{ printf "\n            build: |" }}   
+                set -eux
+            {{- range $step := .BuildSteps -}}
+                {{ printf "\n                %s" $step }}
+            {{- else -}}
+                # Add build steps here.
+                # echo 'I am a build step'
+            {{- end -}}
 
-    # More information: {{ .Assets.Docs.AppReference }}#additional-hosts
-    # additional_hosts:
 
-# The services of the project.
+{{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # The deploy hook is run after the app container has been started, but before it has started accepting requests.
+            # ~ More information: {{ .Assets.Docs.Hooks }}#deploy-hook
+{{- end -}}  
+            {{ printf "\n            deploy: |" }}   
+                set -eux
+            {{- range $deploycmd := .DeployCommand -}}
+                {{ printf "\n                %s" $deploycmd }}
+            {{- else -}}
+                # echo 'Put your deploy command here'
+            {{- end -}}
+{{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # The post_deploy hook is run after the app container has been started and after it has started accepting requests.
+            # -> More information: {{ .Assets.Docs.Hooks }}#deploy-hook
+            # post_deploy: |
+            #     set -eux
+            #     echo "Add post_deploy hook here."
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # The web key configures the web server running in front of your app.
+        # ~ More information: {{ .Assets.Docs.AppReference }}#web
+{{- end -}}  
+        {{ printf "\n        web:" }}   
+
+
+{{- if .WebCommand -}}
+    {{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # Commands are run once after deployment to start the application process.
+            # ~ More information: {{ .Assets.Docs.AppReference }}#web-commands
+    {{- end -}}
+            {{ printf "\n            commands:" }}
+    {{- if .Assets.Docs.ShowComments -}}
+                    {{ "" }}
+                # The command to launch your app. If it terminates, it’s restarted immediately.
+                # You can use the $PORT or the $SOCKET environment variable depending on the socket family of your upstream
+    {{- end -}}
+                {{ printf "\n                start: %s" (quote .WebCommand) }}
+{{- else -}}
+    {{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # Commands are run once after deployment to start the application process.
+            # ~ More information: {{ .Assets.Docs.AppReference }}#web-commands
+            # web.commands.start is the command to launch your app. If it terminates, it’s restarted immediately.
+            # You can use the $PORT or the $SOCKET environment variable depending on the socket family of your upstream
+            {{- if eq "php" .Runtime -}}
+            # PHP applications run PHP-fpm by default
+            # Read about alternative commands here: {{ .Assets.Docs.PHP }}#alternate-start-commands
+            {{- end -}}
+            # commands:
+            #     start: echo 'Put your start command here'
+    {{- end -}}
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # You can listen to a UNIX socket (unix) or a TCP port (tcp, default).
+            {{- if eq "php" .Runtime -}}
+            {{ "" }}
+            # For PHP, the defaults are configured for PHP-FPM and shouldn't need adjustment.
+            {{- end -}}
+{{- end -}} 
+            {{- if .SocketFamily -}}
+            {{ printf "\n            upstream:" }}
+                socket_family: {{ .SocketFamily }}
+            {{- else if .Assets.Docs.ShowComments -}}
+            {{ printf "\n            # upstream:" }}
+            #    socket_family: unix
+            {{- end -}}
+
+
+{{- if .Locations -}}
+    {{- if .Assets.Docs.ShowComments -}}
+            {{ "" }}
+            # Each key in locations is a path on your site with a leading /.
+            # More information: {{ .Assets.Docs.AppReference }}#locations
+    {{- end -}}
+            {{ printf "\n            locations:" }}
+
+
+                {{- range $key, $value := .Locations -}}
+                    {{ printf "\n                \"%s\":" $key }}
+                    {{- range $key, $value := $value -}}
+                        {{- if eq $key "index" -}}
+                            {{ printf "\n                    \"%s\":" $key }}
+                            {{- range $step := $value -}}
+                                {{ printf "\n                        - %s" $step }}
+                            {{- end -}}
+                        {{- else if typeIs "string" $value -}}
+                            {{ printf "\n                    \"%s\": %s" $key (quote $value) }}
+                        {{- else -}}
+                            {{ printf "\n                    \"%s\": %t" $key $value }}
+                        {{- end -}}
+                    {{- end -}}
+                {{- end -}}
+{{- else -}}
+                {{ printf "\n                \"/\":" }}
+                    passthru: true
+                {{- if .Assets.Docs.ShowComments -}}    
+                {{ printf "\n               # \"static\":" }}
+                #     The directory to serve static assets for this location relative to the app’s root directory. Must be an
+                #     actual directory inside the root directory.
+                #     root: "static"
+                #     The number of seconds whitelisted (static) content should be cached.
+                #     expires: 1h
+                #     Whether to allow serving files which don’t match a rule.
+                #     allow: true
+                {{- end -}}
+                
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        # Mounts define directories that are writable after the build is complete.
+        # -> More information: {{ .Assets.Docs.AppReference }}#mounts
+{{- end }}
+{{- if .Mounts -}}
+        {{ printf "\n        mounts:" }}   
+        {{- range $key, $value := .Mounts -}}
+            {{ printf "\n            \"%s\":" $key }}
+            {{- range $key, $value := $value -}}
+                {{ printf "\n                \"%s\": \"%s\"" $key $value }}
+            {{- end -}}
+        {{- end -}}
+{{- else if .Assets.Docs.ShowComments -}}
+        # mounts:
+        #     "/.cache":
+        #         source: "local"
+        #         source_path: "cache"
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # The relationships of the application with services or other applications.
+        # The left-hand side is the name of the relationship as it will be exposed
+        # to the application in the {{ .Assets.EnvPrefix }}_RELATIONSHIPS variable. The right-hand
+        # side is in the form `<service name>:<endpoint name>`.
+        # ~ More information: {{ .Assets.Docs.AppReference }}#relationships
+{{- end -}}
+{{- if .Relationships -}}
+        {{ printf "\n        relationships:" }}
+          {{- range $key, $value := .Relationships -}}
+            {{ printf "\n            %s: \"%s\"" $key $value }}
+          {{- end -}}
+{{- else -}}
+        {{ "" }}
+        # relationships:
+        #    database: "db:postgresql"
+{{ end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # How many resources to devote to the app. Defaults to AUTO in production environments.
+        # -> More information: {{ .Assets.Docs.AppReference }}#sizes
+        # size: AUTO
+{{- end }}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # The timezone for crons to run. Format: a TZ database name. Defaults to UTC, which is the timezone used for all logs
+        # no matter the value here. 
+        # -> More information: {{ .Assets.Docs.TimeZone }}
+        # timezone: UTC
+{{- end }}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Access control for roles accessing app environments.
+        # -> More information: {{ .Assets.Docs.AppReference }}#access
+        # access:
+        #     ssh: admin
+{{- end }}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Outbound firewall rules for the application. 
+        # -> More information: {{ .Assets.Docs.AppReference }}#firewall
+        # firewall:
+        #     outbound:
+        #         - ips: ["0.0.0.0/0"]
+{{- end }}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Scheduled tasks for the app.
+        # -> More information: {{ .Assets.Docs.AppReference }}#crons
+{{- end }}
+        {{- if .Crons -}}
+        {{ printf "\n        crons:" }}   
+        {{- range $key, $value := .Crons -}}
+            {{ printf "\n            %s:" $key }}
+                {{ printf "commands:" }}   
+                {{- range $key, $value := $value -}}
+                    {{ printf "\n                    %s: \"%s\"" $key $value }}
+                {{- end -}}
+        {{- end -}}
+        {{- else if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # crons:
+        {{- end -}}
+
+
+{{- if .Workers -}}
+        {{- if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Alternate copies of the application to run as background processes.
+        # -> More information: {{ .Assets.Docs.AppReference }}#workers
+        {{- end -}}
+        {{ printf "\n        workers:" }}   
+        {{- range $key, $value := .Workers -}}
+            {{ printf "\n            %s:" $key }}
+                {{ printf "commands:" }}   
+                {{- range $key, $value := $value -}}
+                    {{ printf "\n                    %s: \"%s\"" $key $value }}
+                {{- end -}}
+        {{- end -}}
+{{- else if .Assets.Docs.ShowComments -}}
+        {{ "" }}
+        # Alternate copies of the application to run as background processes.
+        # -> More information: {{ .Assets.Docs.AppReference }}#workers
+        # workers:
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+{{ "\n#######################################################################################################################" }}
+{{ "#######################################################################################################################" }}
+# SERVICES
 #
-# Each service listed will be deployed
-# to power your {{ .Assets.ServiceName }} project.
-# More information: {{ .Assets.Docs.Services }}
-# Full list of available services: {{ .Assets.Docs.Services }}#available-services
-{{- if .Services }}
-services:
-  {{ range $value := .Services }}
-  {{- $value.Name }}:
-    type: {{ $value.Type }} # All available versions are: {{ $value.TypeVersions | join ", "}}
-
-  {{ end }}
-{{- else }}
-# services:
-#   db:
-#     type: postgresql:14
-{{ end }}
-
-# The routes of the project.
+# The managed services included with the project.
 #
-# Each route describes how an incoming URL is going
-# to be processed by {{ .Assets.ServiceName }}.
-# More information: {{ .Assets.Docs.Routes }}
-routes:
-  "https://{{ "{default}" }}/":
-    type: upstream
-    upstream: "{{ .Name }}:http"
-  # A basic redirect definition
-  # More information: {{ .Assets.Docs.Routes }}#basic-redirect-definition
-  "https://www.{{ "{default}" }}":
-    type: redirect
-    to: "https://{{ "{default}" }}/"
+# Each service listed will be deployed to power your {{ .Assets.ServiceName }} project.
+# ~ More information: {{ .Assets.Docs.Services }}
+# ~ Full list of available services: {{ .Assets.Docs.Services }}#available-services
+{{ "#######################################################################################################################" }}
+{{ printf "# Top-level key for all services. %s configuration can exist across multiple files, but all must be under this key.\n" .Assets.ServiceName }}
+{{- end -}}
+
+
+{{- if .Services -}}
+
+{{- if .Assets.Docs.ShowComments -}}
+{{ "services:"}}
+{{- else -}}
+{{ "\n\nservices:"}}
+{{- end -}}
+
+  {{- $showComments := .Assets.Docs.ShowComments -}}
+  {{- range $value := .Services -}}
+    {{- if $showComments -}}
+    {{ "" }}
+    # All available versions are: {{ $value.TypeVersions | join ", "}}
+    {{- end -}}
+    {{ printf "\n    %s" $value.Name }}:
+        type: {{ $value.Type }}
+  {{- end -}}
+{{- else if .Assets.Docs.ShowComments -}}
+{{ "\n# services:"}}
+#     db:
+#         type: postgresql:14
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+{{ "\n#######################################################################################################################" }}
+{{ "#######################################################################################################################" }}
+# ROUTES
+#
+# How the project handles requests.
+#
+# Each route describes how an incoming URL is going to be processed by {{ .Assets.ServiceName }}.
+# ~ More information: {{ .Assets.Docs.Routes }}
+{{ "#######################################################################################################################" }}
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+{{ "\nroutes:"}}
+{{- else -}}
+{{ "\n\nroutes:"}}
+{{- end -}}
+
+
+{{- if .Assets.Docs.ShowComments -}}
+    {{ "" }}
+    # A basic upstream definition
+    # ~ More information: {{ .Assets.Docs.Routes }}
+{{- end -}}
+{{ "" }}
+    "https://{{ "{default}" }}/":
+        type: upstream
+        upstream: "{{ .Name }}:http"
+
+
+{{- if .Assets.Docs.ShowComments -}}
+    {{ ""}}
+    # A basic redirect definition
+    # ~ More information: {{ .Assets.Docs.Routes }}#basic-redirect-definition
+{{- end -}}
+{{ "" }}
+    "https://www.{{ "{default}" }}":
+        type: redirect
+        to: "https://{{ "{default}" }}/"
+
+
+{{- if .Assets.Docs.ShowComments -}}
+{{ "\n#######################################################################################################################" }}
+{{ "#######################################################################################################################" }}
+{{- end -}}
+
+
+{{ "\n" }}

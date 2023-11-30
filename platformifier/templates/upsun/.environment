@@ -9,7 +9,7 @@ export DATABASE_URL="${DB_SCHEME}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${D
 {{- end -}}
 {{- if eq .Stack.Name "laravel" }}
 
-# Set Laravel-specific environment variables
+# Set Laravel-specific database environment variables
 export DB_CONNECTION="$DB_SCHEME"
 export DB_DATABASE="$DB_PATH"
 {{- end -}}
@@ -26,6 +26,80 @@ export CACHE_URL="${CACHE_SCHEME}://${CACHE_HOST}:${CACHE_PORT}"
 # Set Redis environment variables
 export REDIS_URL="$CACHE_URL"
 {{- end -}}
+
+{{- if eq .Stack.Name "django" -}}
+# Set database environment variables
+export DB_HOST="$POSTGRESQL_HOST"
+export DB_PORT="$POSTGRESQL_PORT"
+export DB_PATH="$POSTGRESQL_PATH"
+export DB_USERNAME="$POSTGRESQL_USERNAME"
+export DB_PASSWORD="$POSTGRESQL_PASSWORD"
+export DB_SCHEME="$POSTGRESQL_SCHEME"
+export DATABASE_URL="${DB_SCHEME}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_PATH}"
+
+# Set Cache environment variables
+export CACHE_HOST="$REDIS_HOST"
+export CACHE_PORT="$REDIS_PORT"
+export CACHE_SCHEME="$REDIS_SCHEME"
+export CACHE_URL="${CACHE_SCHEME}://${CACHE_HOST}:${CACHE_PORT}"
+
+# Set Redis environment variables
+export REDIS_URL="$CACHE_URL"
+# ------------------------------------------------------------------------------
+export CELERY_BROKER_URL="$CACHE_URL"
+# ------------------------------------------------------------------------------
+# DJANGO_READ_DOT_ENV_FILE=True
+# export USE_DOCKER=False
+export DJANGO_SETTINGS_MODULE=config.settings.production
+export DJANGO_SECRET_KEY="$PLATFORM_PROJECT_ENTROPY"
+export DJANGO_ADMIN_URL="admin-$PLATFORM_ENVIRONMENT"
+export DJANGO_ALLOWED_HOSTS=".platformsh.site"
+
+export APP_LOG_LEVEL="DEBUG"
+
+# Security
+# ------------------------------------------------------------------------------
+# TIP: better off using DNS, however, redirect is OK too
+export DJANGO_SECURE_SSL_REDIRECT=False
+
+# Email
+# ------------------------------------------------------------------------------
+export DJANGO_SERVER_EMAIL=
+
+export SENDGRID_API_KEY=
+export SENDGRID_GENERATE_MESSAGE_ID=True
+export SENDGRID_MERGE_FIELD_FORMAT=None
+
+export EMAIL_HOST=
+export EMAIL_PORT=
+export EMAIL_HOST_USER=
+export EMAIL_HOST_PASSWORD=
+export EMAIL_USE_TLS=
+export EMAIL_USE_SSL=
+
+# AWS
+# ------------------------------------------------------------------------------
+export DJANGO_AWS_ACCESS_KEY_ID=
+export DJANGO_AWS_SECRET_ACCESS_KEY=
+export DJANGO_AWS_STORAGE_BUCKET_NAME=
+
+# django-allauth
+# ------------------------------------------------------------------------------
+export DJANGO_ACCOUNT_ALLOW_REGISTRATION=True
+
+# Gunicorn
+# ------------------------------------------------------------------------------
+export WEB_CONCURRENCY=4
+export GUNICORN_LOGLEVEL='debug'
+# export GUNICORN_LOGLEVEL='info'
+# export GUNICORN_LOGLEVEL='warning'
+# export GUNICORN_LOGLEVEL='error'
+# export GUNICORN_LOGLEVEL='critical'
+
+# Sentry
+# ------------------------------------------------------------------------------
+export SENTRY_DSN=
+
 {{- if eq .Stack.Name "strapi" }}
 
 # Set Strapi-specific environment variables
@@ -50,4 +124,95 @@ fi
 if [[ -z "$APP_KEYS" ]]; then
     export APP_KEYS="${{ .Assets.EnvPrefix }}_PROJECT_ENTROPY"
 fi
+
 {{- end -}}
+
+{{- if eq .Stack.Name "laravel" }}
+export APP_NAME={{ .Name }}
+
+
+export APP_ENV=production
+# Depending on your needs, you can keep `APP_ENV` always set to production, or dependent on the current environment type.
+# export APP_ENV="${{ .Assets.EnvPrefix }}_ENVIRONMENT_TYPE"
+
+export APP_DEBUG=false
+
+export CACHE_DRIVER=redis
+export SESSION_DRIVER=redis
+export REDIS_CLIENT=phpredis
+# export REDIS_HOST
+# export REDIS_PORT
+
+export APP_KEY="${{ .Assets.EnvPrefix }}_PROJECT_ENTROPY"
+
+export APP_URL=$(echo $${{ .Assets.EnvPrefix }}_ROUTES | base64 --decode | jq -r 'to_entries[] | select(.value.primary == true) | .key')
+
+export SESSION_SECURE_COOKIE=1
+
+export MAIL_HOST="${{ .Assets.EnvPrefix }}_SMTP_HOST"
+export MAIL_DRIVER=smtp
+# From Laravel 7 onwards MAIL_DRIVER is renamed to MAIL_MAILER
+export MAIL_MAILER=smtp
+export MAIL_PORT=25
+# Disable TLS with mail, as it isn’t needed or supported within {{ .Assets.ServiceName }}’s network. 
+# Note that doing so is only supported on Laravel 6.0.4 and later. 
+# On earlier versions, you must manually modify `mail.php` and set `encryption` to `null`:
+export MAIL_ENCRYPTION=0
+
+# Set database environment variables
+export DB_HOST="$MARIADB_HOST"
+export DB_PORT="$MARIADB_PORT"
+export DB_PATH="$MARIADB_PATH"
+export DB_USERNAME="$MARIADB_USERNAME"
+export DB_PASSWORD="$MARIADB_PASSWORD"
+export DB_SCHEME="$MARIADB_SCHEME"
+export DATABASE_URL="${DB_SCHEME}://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_PATH}"
+
+# Set Laravel-specific environment variables
+export DB_CONNECTION="$DB_SCHEME"
+export DB_DATABASE="$DB_PATH"
+
+# Set Cache environment variables
+export CACHE_HOST="$REDIS_HOST"
+export CACHE_PORT="$REDIS_PORT"
+export CACHE_SCHEME="$REDIS_SCHEME"
+export CACHE_URL="${CACHE_SCHEME}://${CACHE_HOST}:${CACHE_PORT}"
+
+# Set Redis environment variables
+export REDIS_URL="$CACHE_URL"
+
+export CACHE_DRIVER=redis
+export SESSION_DRIVER=redis
+export REDIS_CLIENT=phpredis
+
+# App configuration
+export APP_NAME=laravel
+# This configuration runs your application in `development` by default initially to help you troubleshoot if necessary.
+# Once deployed, you can update the below if desired.
+export APP_ENV=production
+# Depending on your needs, you can keep `APP_ENV` always set to production, or dependent on the current environment type.
+# export APP_ENV="$PLATFORM_ENVIRONMENT_TYPE"
+# If its necessary to debug an environment, uncomment the below lines.
+# export APP_DEBUG=true
+# export APP_ENV=local
+
+# Laravel requires a random, 32 character string.
+export APP_KEY=$(python3 -c 'import os; print(os.getenv("PLATFORM_PROJECT_ENTROPY")[:32])')
+export APP_URL=$(echo $PLATFORM_ROUTES | base64 --decode | jq -r 'to_entries[] | select(.value.primary == true) | .key')
+
+export SESSION_SECURE_COOKIE=1
+
+# Email
+export MAIL_HOST="$PLATFORM_SMTP_HOST"
+export MAIL_DRIVER=smtp
+# From Laravel 7 onwards MAIL_DRIVER is renamed to MAIL_MAILER
+export MAIL_MAILER=smtp
+export MAIL_PORT=25
+# Disable TLS with mail, as it isn’t needed or supported within {{ .Assets.ServiceName }}’s network. 
+# Note that doing so is only supported on Laravel 6.0.4 and later. 
+# On earlier versions, you must manually modify `mail.php` and set `encryption` to `null`:
+export MAIL_ENCRYPTION=0
+{{- end -}}
+
+
+
