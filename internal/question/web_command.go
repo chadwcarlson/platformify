@@ -3,7 +3,7 @@ package question
 import (
 	"context"
 	"fmt"
-	"os"
+	// "os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -33,6 +33,7 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 	}
 
 	assets, _ := vendorization.FromContext(ctx)
+
 
 	//nolint:lll
 	answers.WebCommand = fmt.Sprintf(
@@ -66,7 +67,7 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 				path.Dir(path.Dir(wsgiPath)),
 			)
 			if wsgiRel != "." {
-				pythonPath = "--pythonpath=" + path.Base(path.Dir(path.Dir(wsgiPath)))
+				pythonPath = " --pythonpath=" + path.Base(path.Dir(path.Dir(wsgiPath)))
 			}
 		}
 
@@ -76,11 +77,11 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 			prefix = "poetry run "
 		}
 		if answers.SocketFamily == models.TCP {
-			answers.WebCommand = fmt.Sprintf("%sgunicorn %s -b 0.0.0.0:$PORT %s --log-file -", prefix, pythonPath, wsgi)
+			answers.WebCommand = fmt.Sprintf("%sgunicorn%s -b 0.0.0.0:$PORT %s --log-file -", prefix, pythonPath, wsgi)
 			return nil
 		}
 
-		answers.WebCommand = fmt.Sprintf("%sgunicorn %s -b unix:$SOCKET %s --log-file -", prefix, pythonPath, wsgi)
+		answers.WebCommand = fmt.Sprintf("%sgunicorn%s -b unix:$SOCKET %s --log-file -", prefix, pythonPath, wsgi)
 		return nil
 	case models.NextJS:
 		answers.WebCommand = "npx next start -p $PORT"
@@ -126,17 +127,6 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 			return nil
 		}
 	case models.Flask:
-		appPath := ""
-		// try to find the app.py, api.py or server.py files
-		for _, name := range []string{"app.py", "server.py", "api.py"} {
-			if _, err := os.Stat(path.Join(answers.WorkingDirectory, name)); err == nil {
-				appPath = fmt.Sprintf("'%s:app'", strings.TrimSuffix(name, ".py"))
-				break
-			}
-		}
-		if appPath == "" {
-			return nil
-		}
 
 		prefix := ""
 		if slices.Contains(answers.DependencyManagers, models.Pipenv) {
@@ -145,13 +135,76 @@ func (q *WebCommand) Ask(ctx context.Context) error {
 			prefix = "poetry run "
 		}
 
-		if answers.SocketFamily == models.TCP {
-			answers.WebCommand = fmt.Sprintf("%sgunicorn -b 0.0.0.0:$PORT %s --log-file -", prefix, appPath)
-			return nil
+		// Using FLASK_APP + either gunicorn/flask run to build start command.
+		if ok, flask_app, _ := utils.FindFlaskApp(answers.WorkingDirectory); ok {
+			if slices.Contains(answers.DependencyManagers, models.Pip) {
+				requirementsPath := utils.FindFile(answers.WorkingDirectory, "requirements.txt")
+				if requirementsPath != "" {
+					if _, ok := utils.DepInNestedRequirements("gunicorn", requirementsPath, true); ok {
+						answers.WebCommand = fmt.Sprintf("%sgunicorn -b unix:$SOCKET %s:app --log-file -", prefix, strings.TrimSuffix(flask_app, ".py"))
+						return nil
+					} else {
+						answers.WebCommand = fmt.Sprintf("%sflask run -p $PORT", prefix)
+						answers.SocketFamily = ""
+						return nil
+					}
+				}
+			} else if slices.Contains(answers.DependencyManagers, models.Poetry) {
+				pyProjectPath := utils.FindFile(answers.WorkingDirectory, "pyproject.toml")
+				if pyProjectPath != "" {
+					if _, ok := utils.GetTOMLValue([]string{"tool", "poetry", "dependencies", "gunicorn"}, pyProjectPath, true); ok {
+						answers.WebCommand = fmt.Sprintf("%sgunicorn -b unix:$SOCKET %s:app --log-file -", prefix, strings.TrimSuffix(flask_app, ".py"))
+						return nil
+					} else {
+						answers.WebCommand = fmt.Sprintf("%sflask run -p $PORT", prefix)
+						answers.SocketFamily = ""
+						return nil
+					}
+				}
+			} else if slices.Contains(answers.DependencyManagers, models.Pipenv) {
+				pipfilePath := utils.FindFile(answers.WorkingDirectory, pipenvFile)
+				if pipfilePath != "" {
+					if _, ok := utils.GetTOMLValue([]string{"packages", "gunicorn"}, pipfilePath, true); ok {
+						answers.WebCommand = fmt.Sprintf("%sgunicorn -b unix:$SOCKET %s:app --log-file -", prefix, strings.TrimSuffix(flask_app, ".py"))
+						return nil
+					} else {
+						answers.WebCommand = fmt.Sprintf("%sflask run -p $PORT", prefix)
+						answers.SocketFamily = ""
+						return nil
+					}
+				}
+			}
 		}
 
-		answers.WebCommand = fmt.Sprintf("%sgunicorn -b unix:$SOCKET %s --log-file -", prefix, appPath)
+
+		// appPath := ""
+		// // try to find the app.py, api.py or server.py files
+		// for _, name := range []string{"app.py", "server.py", "api.py"} {
+		// 	if _, err := os.Stat(path.Join(answers.WorkingDirectory, name)); err == nil {
+		// 		appPath = fmt.Sprintf("'%s:app'", strings.TrimSuffix(name, ".py"))
+		// 		break
+		// 	}
+		// }
+		// if appPath == "" {
+		// 	return nil
+		// }
+
+		// prefix := ""
+		// if slices.Contains(answers.DependencyManagers, models.Pipenv) {
+		// 	prefix = "pipenv run "
+		// } else if slices.Contains(answers.DependencyManagers, models.Poetry) {
+		// 	prefix = "poetry run "
+		// }
+
+		// if answers.SocketFamily == models.TCP {
+		// 	answers.WebCommand = fmt.Sprintf("%sgunicorn -b 0.0.0.0:$PORT %s --log-file -", prefix, appPath)
+		// 	return nil
+		// }
+
+		// answers.WebCommand = fmt.Sprintf("%sgunicorn -b unix:$SOCKET %s --log-file -", prefix, appPath)
 		return nil
+
+
 	}
 
 	return nil

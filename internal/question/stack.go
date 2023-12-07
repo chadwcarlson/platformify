@@ -3,8 +3,8 @@ package question
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
+	"os"
 
 	"golang.org/x/exp/slices"
 
@@ -23,6 +23,9 @@ const (
 	composerJSONFile = "composer.json"
 	packageJSONFile  = "package.json"
 	symfonyLockFile  = "symfony.lock"
+	pipFile 	     = "requirements.txt"
+	pipenvFile			 = "Pipfile"
+	poetryFile		 = "pyproject.toml"
 )
 
 type Stack struct{}
@@ -41,11 +44,21 @@ func (q *Stack) Ask(ctx context.Context) error {
 		if answers.Stack != models.GenericStack {
 			fmt.Fprintf(
 				stderr,
-				"%s %s\n",
+				"\n%s %s\n",
 				colors.Colorize(colors.GreenCode, "✓"),
 				colors.Colorize(
 					colors.BrandCode,
 					fmt.Sprintf("Detected stack: %s", answers.Stack.Title()),
+				),
+			)
+		} else {
+			fmt.Fprintf(
+				stderr,
+				"\n\n%s %s\n",
+				colors.Colorize(colors.GreenCode, "✓"),
+				colors.Colorize(
+					colors.BrandCode,
+					fmt.Sprintf("No specific stack detected"),
 				),
 			)
 		}
@@ -53,37 +66,71 @@ func (q *Stack) Ask(ctx context.Context) error {
 
 	answers.Stack = models.GenericStack
 
-	hasSettingsPy := utils.FileExists(answers.WorkingDirectory, settingsPyFile)
-	hasManagePy := utils.FileExists(answers.WorkingDirectory, managePyFile)
-	if hasSettingsPy && hasManagePy {
-		answers.Stack = models.Django
-		return nil
-	}
-
-	requirementsPath := utils.FindFile(answers.WorkingDirectory, "requirements.txt")
-	if requirementsPath != "" {
-		f, err := os.Open(requirementsPath)
-		if err == nil {
-			defer f.Close()
-			if ok, _ := utils.ContainsStringInFile(f, "flask", true); ok {
-				answers.Stack = models.Flask
-				return nil
-			}
+	// Allow for setting stack values quickly via environment variables.
+	if os.Getenv("UPSUN_STACK") != "" {
+		if os.Getenv("UPSUN_STACK") == "django" {
+			answers.Stack = models.Django
+			return nil
 		}
-	}
-
-	pyProjectPath := utils.FindFile(answers.WorkingDirectory, "pyproject.toml")
-	if pyProjectPath != "" {
-		if _, ok := utils.GetTOMLValue([]string{"tool", "poetry", "dependencies", "flask"}, pyProjectPath, true); ok {
-			answers.Stack = models.Flask
+		if os.Getenv("UPSUN_STACK") == "laravel" {
+			answers.Stack = models.Laravel
 			return nil
 		}
 	}
 
-	pipfilePath := utils.FindFile(answers.WorkingDirectory, "Pipfile")
+	hasSettingsPy := utils.FileExists(answers.WorkingDirectory, settingsPyFile)
+	hasManagePy := utils.FileExists(answers.WorkingDirectory, managePyFile)
+	if hasSettingsPy || hasManagePy {
+
+		requirementsPath := utils.FindFile(answers.WorkingDirectory, pipFile)
+		if requirementsPath != "" {
+			if _, ok := utils.DepInNestedRequirements("django", requirementsPath, true); ok {
+				answers.Stack = models.Django
+				return nil
+			}
+		}
+	
+		pyProjectPath := utils.FindFile(answers.WorkingDirectory, poetryFile)
+		if pyProjectPath != "" {
+			if _, ok := utils.GetTOMLValue([]string{"tool", "poetry", "dependencies", "django"}, pyProjectPath, true); ok {
+				answers.Stack = models.Django
+				return nil
+			}
+		}
+	
+		pipfilePath := utils.FindFile(answers.WorkingDirectory, pipenvFile)
+		if pipfilePath != "" {
+			if _, ok := utils.GetTOMLValue([]string{"packages", "django"}, pipfilePath, true); ok {
+				answers.Stack = models.Django
+				return nil
+			}
+		}
+
+	}
+
+	requirementsPath := utils.FindFile(answers.WorkingDirectory, pipFile)
+	if requirementsPath != "" {
+		if _, ok := utils.DepInNestedRequirements("flask", requirementsPath, true); ok {
+			answers.Stack = models.Flask
+			answers.DependencyManagers = append(answers.DependencyManagers, models.Pip)
+			return nil
+		}
+	}
+
+	pyProjectPath := utils.FindFile(answers.WorkingDirectory, poetryFile)
+	if pyProjectPath != "" {
+		if _, ok := utils.GetTOMLValue([]string{"tool", "poetry", "dependencies", "flask"}, pyProjectPath, true); ok {
+			answers.Stack = models.Flask
+			answers.DependencyManagers = append(answers.DependencyManagers, models.Poetry)
+			return nil
+		}
+	}
+
+	pipfilePath := utils.FindFile(answers.WorkingDirectory, pipenvFile)
 	if pipfilePath != "" {
 		if _, ok := utils.GetTOMLValue([]string{"packages", "flask"}, pipfilePath, true); ok {
 			answers.Stack = models.Flask
+			answers.DependencyManagers = append(answers.DependencyManagers, models.Pipenv)
 			return nil
 		}
 	}

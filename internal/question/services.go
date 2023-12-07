@@ -1,6 +1,7 @@
 package question
 
 import (
+	"os"
 	"context"
 	"fmt"
 	"strings"
@@ -42,13 +43,32 @@ func (q *Services) Ask(ctx context.Context) error {
 	}
 
 	var services models.ServiceNameList
-	for {
-		if err := survey.AskOne(question, &services, survey.WithKeepFilter(true)); err != nil {
-			return err
+
+	// Define stack default overrides
+	if os.Getenv("UPSUN_USEDEFAULTS") == "1" || os.Getenv("UPSUN_USEDEFAULTS") == "true" {
+		if os.Getenv("UPSUN_STACK") == "laravel" {
+			services = []models.ServiceName{
+				models.MySQL, 
+				models.Redis,
+			}
 		}
+		if os.Getenv("UPSUN_STACK") == "django" {
+			services = []models.ServiceName{
+				models.PostgreSQL, 
+				models.Redis,
+			}
+		}
+	}
+
+	for {
 
 		if len(services) > 0 {
+			fmt.Print(services)
 			break
+		}
+
+		if err := survey.AskOne(question, &services, survey.WithKeepFilter(true)); err != nil {
+			return err
 		}
 
 		confirmQuestion := &survey.Confirm{
@@ -64,7 +84,7 @@ func (q *Services) Ask(ctx context.Context) error {
 			break
 		}
 	}
-
+	
 	for _, serviceName := range services {
 		versions, ok := models.ServiceTypeVersions[serviceName]
 		if !ok || len(versions) == 0 {

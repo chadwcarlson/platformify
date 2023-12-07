@@ -2,7 +2,7 @@ package question
 
 import (
 	"context"
-	"fmt"
+	// "fmt"
 	"path"
 	"path/filepath"
 
@@ -10,7 +10,7 @@ import (
 
 	"github.com/platformsh/platformify/internal/question/models"
 	"github.com/platformsh/platformify/internal/utils"
-	"github.com/platformsh/platformify/vendorization"
+	// "github.com/platformsh/platformify/vendorization"
 )
 
 type BuildSteps struct{}
@@ -46,6 +46,7 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 		case models.Pip:
 			answers.BuildSteps = append(
 				answers.BuildSteps,
+				"pip install --upgrade pip",
 				"pip install -r requirements.txt",
 			)
 		case models.Yarn, models.Npm:
@@ -99,22 +100,26 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 			path.Join(answers.WorkingDirectory, answers.ApplicationRoot),
 			managePyFile,
 		); managePyPath != "" {
-			prefix := ""
-			if slices.Contains(answers.DependencyManagers, models.Pipenv) {
-				prefix = "pipenv run "
-			} else if slices.Contains(answers.DependencyManagers, models.Poetry) {
-				prefix = "poetry run "
-			}
+			// prefix := ""
+			// if slices.Contains(answers.DependencyManagers, models.Pipenv) {
+			// 	prefix = "pipenv run "
+			// } else if slices.Contains(answers.DependencyManagers, models.Poetry) {
+			// 	prefix = "poetry run "
+			// }
 
 			managePyPath, _ = filepath.Rel(path.Join(answers.WorkingDirectory, answers.ApplicationRoot), managePyPath)
-			assets, _ := vendorization.FromContext(ctx)
+			// assets, _ := vendorization.FromContext(ctx)
 			answers.BuildSteps = append(
 				answers.BuildSteps,
-				fmt.Sprintf(
-					"# Collect static files so that they can be served by %s",
-					assets.ServiceName,
-				),
-				fmt.Sprintf("%spython %s collectstatic --noinput", prefix, managePyPath),
+				// "pip install --upgrade pip",
+				// "pip install -r requirements.txt",
+				// fmt.Sprintf(
+				// 	"# Collect static files so that they can be served by %s.",
+				// 	assets.ServiceName,
+				// ),
+				// fmt.Sprintf("%spython %s collectstatic --noinput\n", prefix, managePyPath),
+				"npm install",
+				"npm run build",
 			)
 		}
 	case models.NextJS:
@@ -125,6 +130,44 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 				cmd = "yarn exec next build"
 			}
 			answers.BuildSteps = append(answers.BuildSteps, cmd)
+		}
+	}
+
+	if answers.Stack == models.Laravel {
+		answers.BuildSteps = append(
+			answers.BuildSteps,
+			"n auto || n lts",
+			"hash -r",
+			"npm install",
+			"npm run production",
+		)
+	}
+
+	if answers.Stack == models.Flask {
+
+		packageJSONPath := "package.json"
+		hasPackageJSON := utils.FileExists(answers.WorkingDirectory, packageJSONPath)
+
+		if hasPackageJSON {
+			if _, ok := utils.GetJSONValue([]string{"scripts", "build"}, packageJSONPath, true); ok {
+				answers.BuildSteps = append(
+					answers.BuildSteps,
+					"npm install",
+					"npm run build",
+				)
+			} else {
+				answers.BuildSteps = append(
+					answers.BuildSteps,
+					"# npm install",
+					"# npm run build",
+				)
+			}
+		} else {
+			answers.BuildSteps = append(
+				answers.BuildSteps,
+				"# npm install",
+				"# npm run build",
+			)
 		}
 	}
 

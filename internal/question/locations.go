@@ -23,6 +23,19 @@ func (q *Locations) Ask(ctx context.Context) error {
 			"expires": "1h",
 			"allow":   true,
 		}
+	case models.Laravel:
+		answers.Locations["/"] = map[string]interface{}{
+			"root":    "public",
+			"allow":   true,
+			"passthru": "/index.php",
+			"index": []string{
+				"index.php",
+			},
+		}
+		answers.Locations["/storage"] = map[string]interface{}{
+			"root":    "storage/app/public",
+			"scripts":   false,
+		}
 	default:
 		if answers.Type.Runtime == models.PHP {
 			locations := map[string]interface{}{

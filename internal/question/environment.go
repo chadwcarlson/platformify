@@ -2,7 +2,7 @@ package question
 
 import (
 	"context"
-
+	"github.com/platformsh/platformify/internal/utils"
 	"github.com/platformsh/platformify/internal/question/models"
 )
 
@@ -23,6 +23,15 @@ func (q *Environment) Ask(ctx context.Context) error {
 		case models.Pipenv:
 			answers.Environment["PIPENV_TOOL_VERSION"] = "2023.2.18"
 			answers.Environment["PIPENV_VENV_IN_PROJECT"] = "1"
+		}
+	}
+
+	switch answers.Stack {
+	case models.Laravel:
+		answers.Environment["N_PREFIX"] = "/app/.global"
+	case models.Flask:
+		if ok, flask_app, _ := utils.FindFlaskApp(answers.WorkingDirectory); ok {
+			answers.Environment["FLASK_APP"] = flask_app
 		}
 	}
 
