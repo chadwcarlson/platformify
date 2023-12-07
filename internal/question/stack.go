@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"os"
 
 	"golang.org/x/exp/slices"
 
@@ -22,6 +23,9 @@ const (
 	composerJSONFile = "composer.json"
 	packageJSONFile  = "package.json"
 	symfonyLockFile  = "symfony.lock"
+	pipFile 	     = "requirements.txt"
+	pipenvFile			 = "Pipfile"
+	poetryFile		 = "pyproject.toml"
 )
 
 type Stack struct{}
@@ -77,30 +81,56 @@ func (q *Stack) Ask(ctx context.Context) error {
 	hasSettingsPy := utils.FileExists(answers.WorkingDirectory, settingsPyFile)
 	hasManagePy := utils.FileExists(answers.WorkingDirectory, managePyFile)
 	if hasSettingsPy || hasManagePy {
-		answers.Stack = models.Django
-		return nil
+
+		requirementsPath := utils.FindFile(answers.WorkingDirectory, pipFile)
+		if requirementsPath != "" {
+			if _, ok := utils.DepInNestedRequirements("django", requirementsPath, true); ok {
+				answers.Stack = models.Django
+				return nil
+			}
+		}
+	
+		pyProjectPath := utils.FindFile(answers.WorkingDirectory, poetryFile)
+		if pyProjectPath != "" {
+			if _, ok := utils.GetTOMLValue([]string{"tool", "poetry", "dependencies", "django"}, pyProjectPath, true); ok {
+				answers.Stack = models.Django
+				return nil
+			}
+		}
+	
+		pipfilePath := utils.FindFile(answers.WorkingDirectory, pipenvFile)
+		if pipfilePath != "" {
+			if _, ok := utils.GetTOMLValue([]string{"packages", "django"}, pipfilePath, true); ok {
+				answers.Stack = models.Django
+				return nil
+			}
+		}
+
 	}
 
-	requirementsPath := utils.FindFile(answers.WorkingDirectory, "requirements.txt")
+	requirementsPath := utils.FindFile(answers.WorkingDirectory, pipFile)
 	if requirementsPath != "" {
 		if _, ok := utils.DepInNestedRequirements("flask", requirementsPath, true); ok {
 			answers.Stack = models.Flask
+			answers.DependencyManagers = append(answers.DependencyManagers, models.Pip)
 			return nil
 		}
 	}
 
-	pyProjectPath := utils.FindFile(answers.WorkingDirectory, "pyproject.toml")
+	pyProjectPath := utils.FindFile(answers.WorkingDirectory, poetryFile)
 	if pyProjectPath != "" {
 		if _, ok := utils.GetTOMLValue([]string{"tool", "poetry", "dependencies", "flask"}, pyProjectPath, true); ok {
 			answers.Stack = models.Flask
+			answers.DependencyManagers = append(answers.DependencyManagers, models.Poetry)
 			return nil
 		}
 	}
 
-	pipfilePath := utils.FindFile(answers.WorkingDirectory, "Pipfile")
+	pipfilePath := utils.FindFile(answers.WorkingDirectory, pipenvFile)
 	if pipfilePath != "" {
 		if _, ok := utils.GetTOMLValue([]string{"packages", "flask"}, pipfilePath, true); ok {
 			answers.Stack = models.Flask
+			answers.DependencyManagers = append(answers.DependencyManagers, models.Pipenv)
 			return nil
 		}
 	}

@@ -69,6 +69,37 @@ func FindAllFiles(searchPath, name string) []string {
 	return found
 }
 
+// FindAllFiles searches for the file inside the path recursively and returns all matches
+func FindAllFilesWithExtension(searchPath, extension string) []string {
+	found := make([]string, 0)
+	_ = filepath.WalkDir(searchPath, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			// Skip vendor directories
+			// if slices.Contains(skipDirs, d.Name()) {
+			// 	return filepath.SkipDir
+			// }
+			// return nil
+			return filepath.SkipDir
+		}
+
+		if strings.Contains(d.Name(), extension) {
+			found = append(found, p)
+		}
+
+		// if d.Name() == name {
+		// 	found = append(found, p)
+		// }
+
+		return nil
+	})
+
+	return found
+}
+
 func GetMapValue(keyPath []string, data map[string]interface{}) (value interface{}, ok bool) {
 	if len(keyPath) == 0 {
 		return data, true
@@ -118,6 +149,52 @@ func GetJSONValue(keyPath []string, filePath string, caseInsensitive bool) (valu
 	}
 
 	return GetMapValue(keyPath, data)
+}
+
+// There are three common identifiers for finding FLASK_APP: the create_app or make_app factories, or the main Flask class.
+func FindFlaskApp(workingDirectory string) (bool, string, error) {
+	rootPyFiles := FindAllFilesWithExtension(workingDirectory,".py")
+	for _, rootPyFilePath := range rootPyFiles {
+		// create_app factory.
+		f, err := os.Open(rootPyFilePath)
+		if err != nil {
+			return false, "", nil
+		}
+		defer f.Close()
+		if ok, _, _ := ContainsStringInFile(f, "create_app(", false, false); ok {
+			return true, filepath.Base(rootPyFilePath), nil
+		} else {
+			return false, "", nil
+		}
+
+		// run_app factory.
+		// f, err := os.Open(rootPyFilePath)
+		if err != nil {
+			return false, "", nil
+		}
+		// defer f.Close()
+		if ok, _, _ := ContainsStringInFile(f, "run_app(", false, false); ok {
+			return true, filepath.Base(rootPyFilePath), nil
+		} else {
+			return false, "", nil
+		}
+
+		// Flask class.
+		// f, err := os.Open(rootPyFilePath)
+		if err != nil {
+			return false, "", nil
+		}
+		// defer f.Close()
+		if ok, _, _ := ContainsStringInFile(f, "= Flask(", false, false); ok {
+			return true, filepath.Base(rootPyFilePath), nil
+		} else {
+			return false, "", nil
+		}
+
+	}
+
+	return false, "", nil
+
 }
 
 // ContainsStringInFile checks if the given file contains the given string

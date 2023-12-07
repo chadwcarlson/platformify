@@ -99,7 +99,7 @@ export GUNICORN_LOGLEVEL='debug'
 # Sentry
 # ------------------------------------------------------------------------------
 export SENTRY_DSN=
-
+{{- end -}}
 {{- if eq .Stack.Name "strapi" }}
 
 # Set Strapi-specific environment variables

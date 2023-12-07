@@ -2,7 +2,7 @@ package question
 
 import (
 	"context"
-
+	"github.com/platformsh/platformify/internal/utils"
 	"github.com/platformsh/platformify/internal/question/models"
 )
 
@@ -29,6 +29,10 @@ func (q *Environment) Ask(ctx context.Context) error {
 	switch answers.Stack {
 	case models.Laravel:
 		answers.Environment["N_PREFIX"] = "/app/.global"
+	case models.Flask:
+		if ok, flask_app, _ := utils.FindFlaskApp(answers.WorkingDirectory); ok {
+			answers.Environment["FLASK_APP"] = flask_app
+		}
 	}
 
 	return nil

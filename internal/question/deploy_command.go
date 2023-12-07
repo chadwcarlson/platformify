@@ -47,6 +47,17 @@ func (q *DeployCommand) Ask(ctx context.Context) error {
 			"php artisan migrate --force",
 			
 		)
+	case models.Flask:
+		prefix := ""
+		if slices.Contains(answers.DependencyManagers, models.Pipenv) {
+			prefix = "pipenv run "
+		} else if slices.Contains(answers.DependencyManagers, models.Poetry) {
+			prefix = "poetry run "
+		}
+		answers.DeployCommand = append(answers.DeployCommand,
+			"# npm run build",
+			fmt.Sprintf("# %sflask run db upgrade", prefix),
+		)
 	}
 
 	return nil

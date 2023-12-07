@@ -6,7 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
-	// "golang.org/x/exp/slices"
+	"golang.org/x/exp/slices"
 
 	"github.com/platformsh/platformify/internal/question/models"
 	"github.com/platformsh/platformify/internal/utils"
@@ -46,9 +46,7 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 		case models.Pip:
 			answers.BuildSteps = append(
 				answers.BuildSteps,
-				"# Upgrade to the latest version of pip.",
 				"pip install --upgrade pip",
-				"# Install dependencies.",
 				"pip install -r requirements.txt",
 			)
 		case models.Yarn, models.Npm:
@@ -113,8 +111,8 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 			// assets, _ := vendorization.FromContext(ctx)
 			answers.BuildSteps = append(
 				answers.BuildSteps,
-				"pip install --upgrade pip",
-				"pip install -r requirements.txt",
+				// "pip install --upgrade pip",
+				// "pip install -r requirements.txt",
 				// fmt.Sprintf(
 				// 	"# Collect static files so that they can be served by %s.",
 				// 	assets.ServiceName,
@@ -143,6 +141,34 @@ func (q *BuildSteps) Ask(ctx context.Context) error {
 			"npm install",
 			"npm run production",
 		)
+	}
+
+	if answers.Stack == models.Flask {
+
+		packageJSONPath := "package.json"
+		hasPackageJSON := utils.FileExists(answers.WorkingDirectory, packageJSONPath)
+
+		if hasPackageJSON {
+			if _, ok := utils.GetJSONValue([]string{"scripts", "build"}, packageJSONPath, true); ok {
+				answers.BuildSteps = append(
+					answers.BuildSteps,
+					"npm install",
+					"npm run build",
+				)
+			} else {
+				answers.BuildSteps = append(
+					answers.BuildSteps,
+					"# npm install",
+					"# npm run build",
+				)
+			}
+		} else {
+			answers.BuildSteps = append(
+				answers.BuildSteps,
+				"# npm install",
+				"# npm run build",
+			)
+		}
 	}
 
 	return nil
