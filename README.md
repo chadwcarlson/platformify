@@ -20,7 +20,7 @@
 
 Get your project ready to be deployed in Platform.sh and Upsun!
 
-This project supplies the `project:init` subcommand that's imported into both the [Platform.sh](https://docs.platform.sh/administration/cli.html) and [Upsun CLI](https://docs.upsun.com/administration/cli.html).
+This project supplies the `project:init` and `validate` subcommands imported into both the [Platform.sh](https://docs.platform.sh/administration/cli.html) and [Upsun CLI](https://docs.upsun.com/administration/cli.html).
 
 ## Contributions
 
@@ -57,16 +57,16 @@ make build
 
 ## Tests
 
-1. Clean
-
-    ```bash
-    make clean
-    ```
-
 1. Tidy    
 
     ```bash
     go mod tidy
+    ```
+
+1. Format
+
+    ```bash
+    gofmt -s -w .
     ```
 
 1. Build
@@ -86,6 +86,10 @@ make build
     > For Mac, this is `brew install golangci-lint`, and `export PATH="/Users/yourusername/go/bin/:$PATH"`.
     > Replace the path above for your settings.
     > This needs to be the full path. `~` is not enough. Use `GOPATH` if available, otherwise spell out the full path.
+
+
+    > [!NOTE]
+    > If `make lint` results in a failure for a file you've modified (`File is not gotfmt-ed with -s`), run `gofmt -s -w .`.
 
 1. Run tests
 
