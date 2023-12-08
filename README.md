@@ -20,7 +20,7 @@
 
 Get your project ready to be deployed in Platform.sh and Upsun!
 
-This project supplies the `project:init` subcommand that's imported into both the [Platform.sh](https://docs.platform.sh/administration/cli.html) and [Upsun CLI](https://docs.upsun.com/administration/cli.html).
+This project supplies the `project:init` and `validate` subcommands imported into both the [Platform.sh](https://docs.platform.sh/administration/cli.html) and [Upsun CLI](https://docs.upsun.com/administration/cli.html).
 
 ## Contributions
 
