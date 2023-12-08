@@ -24,7 +24,7 @@ func main() {
 		EnvPrefix:    "PLATFORM",
 		ServiceName:  "Upsun",
 		Use:          "upsunify",
-		NIPrefix:	  "UPSUN",
+		NIPrefix:     "UPSUN",
 	}
 
 	err := commands.Execute(assets)

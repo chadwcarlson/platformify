@@ -24,7 +24,7 @@ func main() {
 		EnvPrefix:    "PLATFORM",
 		ServiceName:  "Platform.sh",
 		Use:          "platformify",
-		NIPrefix:	  "PLATFORMSH",
+		NIPrefix:     "PLATFORMSH",
 	}
 	err := commands.Execute(assets)
 	if err != nil {

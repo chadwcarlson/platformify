@@ -87,6 +87,10 @@ make build
     > Replace the path above for your settings.
     > This needs to be the full path. `~` is not enough. Use `GOPATH` if available, otherwise spell out the full path.
 
+
+    > [!NOTE]
+    > If `make lint` results in a failure for a file you've modified (`File is not gotfmt-ed with -s`), run `gofmt -s -w .`.
+
 1. Run tests
 
     ```bash

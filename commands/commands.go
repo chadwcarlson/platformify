@@ -1,21 +1,21 @@
 package commands
 
 import (
-	"fmt"
 	"context"
-	"github.com/spf13/viper"
+	"fmt"
 	"github.com/platformsh/platformify/vendorization"
+	"github.com/spf13/viper"
 )
 
 // Execute executes the ify command and sets flags appropriately.
 func Execute(assets *vendorization.VendorAssets) error {
 	cmd := NewPlatformifyCmd(assets)
 	cmd.PersistentFlags().BoolP(
-		"no-interaction", 
-		"", 
-		false, 
+		"no-interaction",
+		"",
+		false,
 		fmt.Sprintf(
-			"Do not ask any interactive questions; accept default values. Equivalent to using the environment variable: %s_CLI_NO_INTERACTION=1", 
+			"Do not ask any interactive questions; accept default values. Equivalent to using the environment variable: %s_CLI_NO_INTERACTION=1",
 			assets.NIPrefix,
 		),
 	)

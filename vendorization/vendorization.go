@@ -28,7 +28,7 @@ type VendorAssets struct {
 	EnvPrefix    string
 	ServiceName  string
 	Use          string
-	NIPrefix	 string
+	NIPrefix     string
 }
 
 func (va *VendorAssets) ProprietaryFiles() []string {

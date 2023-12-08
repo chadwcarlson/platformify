@@ -27,7 +27,7 @@ func NewPlatformifyCmd(assets *vendorization.VendorAssets) *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			
+
 			answers := models.NewAnswers()
 			answers.Flavor, _ = cmd.Context().Value(FlavorKey).(string)
 
@@ -36,8 +36,8 @@ func NewPlatformifyCmd(assets *vendorization.VendorAssets) *cobra.Command {
 			noInteractionVar := fmt.Sprintf("%s_CLI_NO_INTERACTION", assets.NIPrefix)
 			if os.Getenv(noInteractionVar) == "1" {
 				answers.NoInteraction = true
-			} 
-						
+			}
+
 			ctx := models.ToContext(cmd.Context(), answers)
 			ctx = colors.ToContext(
 				ctx,
