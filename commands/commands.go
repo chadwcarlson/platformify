@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/platformsh/platformify/vendorization"
-	
+
 	"github.com/spf13/viper"
 )
 
