@@ -57,18 +57,15 @@ func (q *FilesOverwrite) Ask(ctx context.Context) error {
 			fmt.Fprintln(stderr, colors.Colorize(colors.WarningCode, fmt.Sprintf("  - %s", p)))
 		}
 
-		noInteractionVar := fmt.Sprintf("%s_CLI_NO_INTERACTION", assets.NIPrefix)
-		
 		proceed := false
-		
-		if os.Getenv(noInteractionVar) != "1" {
+		if !answers.NoInteraction {
 			if err := survey.AskOne(&survey.Confirm{
 				Message: "Do you want to overwrite them?",
 				Default: proceed,
 			}, &proceed); err != nil {
 				return err
 			}
-		} 
+		}
 
 		if !proceed {
 			return questionnaire.ErrUserAborted
