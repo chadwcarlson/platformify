@@ -6,6 +6,30 @@ linters-settings:
     # report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`;
     # default is false: such cases aren't reported by default.
     check-blank: false
+  depguard:
+    rules:
+      main:
+        files:
+          - $all
+          - "!$test"
+        allow:
+          - $gostd
+          - github.com/platformsh
+          - github.com/spf13 
+          - github.com/golang
+          - github.com/pelletier
+          - github.com/mgutz
+          - github.com/AlecAivazis
+          - github.com/Masterminds
+          - github.com/xeipuuv
+      test:
+        files:
+          - $test
+        allow:
+          - $gostd
+          - github.com/stretchr
+          - github.com/platformsh
+          - github.com/golang
   goconst:
     # minimal occurrences count to trigger, 3 by default
     min-occurrences: 5
@@ -155,6 +179,10 @@ issues:
     - linters:
         - lll
       source: "^//go:generate "
+    # typecheck consistently fails locally, despite matching go & golangci-lint versions (https://github.com/golangci/golangci-lint/issues/2912)
+    - path: /
+      linters:
+      - typecheck
 
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration
