@@ -57,12 +57,6 @@ make build
 
 ## Tests
 
-1. Clean
-
-    ```bash
-    make clean
-    ```
-
 1. Tidy    
 
     ```bash

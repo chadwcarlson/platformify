@@ -17,10 +17,11 @@ func Execute(assets *vendorization.VendorAssets) error {
 		fmt.Sprintf(
 			"%s %s %s_CLI_NO_INTERACTION=1",
 			"Do not ask any interactive questions; accept default values.",
+			"Equivalent to using the environment variable:",
 			assets.NIPrefix,
 		),
 	)
-	_, err := viper.BindPFlag("no-interaction", cmd.PersistentFlags().Lookup("no-interaction"))
+	err := viper.BindPFlag("no-interaction", cmd.PersistentFlags().Lookup("no-interaction"))
 	if err != nil {
 		return err
 	}
