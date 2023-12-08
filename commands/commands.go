@@ -15,11 +15,15 @@ func Execute(assets *vendorization.VendorAssets) error {
 		"",
 		false,
 		fmt.Sprintf(
-			"Do not ask any interactive questions; accept default values. Equivalent to using the environment variable: %s_CLI_NO_INTERACTION=1",
+			"%s %s %s_CLI_NO_INTERACTION=1",
+			"Do not ask any interactive questions; accept default values.",
 			assets.NIPrefix,
 		),
 	)
-	viper.BindPFlag("no-interaction", cmd.PersistentFlags().Lookup("no-interaction"))
+	_, err := viper.BindPFlag("no-interaction", cmd.PersistentFlags().Lookup("no-interaction"))
+	if err != nil {
+		return err
+	}
 	validateCmd := NewValidateCommand(assets)
 	cmd.AddCommand(validateCmd)
 	return cmd.ExecuteContext(vendorization.WithVendorAssets(context.Background(), assets))

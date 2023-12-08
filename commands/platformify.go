@@ -27,7 +27,6 @@ func NewPlatformifyCmd(assets *vendorization.VendorAssets) *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			answers := models.NewAnswers()
 			answers.Flavor, _ = cmd.Context().Value(FlavorKey).(string)
 
