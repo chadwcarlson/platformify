@@ -69,6 +69,12 @@ make build
     go mod tidy
     ```
 
+1. Format
+
+    ```bash
+    gofmt -s -w .
+    ```
+
 1. Build
 
     ```bash
